@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X } from "lucide-react";
 import { CiWallet } from "react-icons/ci";
 
 interface RepayModalProps {
