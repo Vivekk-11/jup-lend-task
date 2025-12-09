@@ -40,6 +40,32 @@ const MainTop = () => {
           <span className="outline-none flex size-7 items-center justify-center rounded-full border border-neutral-800 text-neutral-400">
             <CiGlobe />
           </span>
+
+          <svg
+            xmlns="www.w3.org/2000/svg"
+            width="35"
+            height="35"
+            viewBox="0 0 35 35"
+            fill="none"
+          >
+            <circle
+              cx="17.5"
+              cy="17.5"
+              r="16.5"
+              stroke="#2B3426"
+              stroke-width="2"
+            />
+            <mask id="path-2-inside-1_1849_444" fill="white">
+              <path d="M34.9456 16.1213C34.5988 11.7324 32.6105 7.6356 29.3772 4.64764C26.1439 1.65969 21.9032 0.000168008 17.5007 1.27409e-08L17.5006 1.98829C21.4029 1.98844 25.1618 3.45941 28.0277 6.10788C30.8937 8.75636 32.6561 12.3877 32.9635 16.2779L34.9456 16.1213Z" />
+            </mask>
+            <path
+              d="M34.9456 16.1213C34.5988 11.7324 32.6105 7.6356 29.3772 4.64764C26.1439 1.65969 21.9032 0.000168008 17.5007 1.27409e-08L17.5006 1.98829C21.4029 1.98844 25.1618 3.45941 28.0277 6.10788C30.8937 8.75636 32.6561 12.3877 32.9635 16.2779L34.9456 16.1213Z"
+              stroke="#9FC16B"
+              stroke-width="4"
+              mask="url(#path-2-inside-1_1849_444)"
+            />
+          </svg>
+          5:03 P
         </div>
       </div>
       <div className="flex items-center justify-between rounded-xl border border-neutral-850 p-4 lg:ml-auto lg:justify-normal lg:gap-8 lg:border-0 lg:p-0 cz-color-16777215 cz-color-3023897">
