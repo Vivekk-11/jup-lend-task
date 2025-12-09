@@ -42,30 +42,23 @@ export default function BorrowModal({
   const LIQUIDATION_THRESHOLD = 0.8;
   const SOL_PRICE = 132;
 
-  // Calculate new borrowed amount
   const additionalBorrow = parseFloat(amount) || 0;
   const newBorrowedAmount = borrowedAmount + additionalBorrow;
 
-  // Calculate collateral value
   const collateralValue = suppliedAmount * SOL_PRICE;
 
-  // Calculate health percentage (LTV utilization)
-  // Cap at 100%
   const healthPercentage =
     collateralValue > 0
       ? Math.min((newBorrowedAmount / collateralValue) * 100, 100)
       : 0;
 
-  // Handle slider change
   const handleSliderChange = (value: number[]) => {
     const percentage = value[0];
-    // Calculate how much to borrow at this percentage
     const targetBorrowed = (collateralValue * percentage) / 100;
     const newBorrowAmount = Math.max(targetBorrowed - borrowedAmount, 0);
     setAmount(newBorrowAmount.toFixed(2));
   };
 
-  // Calculate liquidation price
   const liquidationPrice =
     suppliedAmount > 0
       ? newBorrowedAmount / (suppliedAmount * LIQUIDATION_THRESHOLD)
@@ -73,7 +66,6 @@ export default function BorrowModal({
 
   const currentPrice = SOL_PRICE;
 
-  // Determine risk status
   const getRiskStatus = () => {
     if (healthPercentage >= 80)
       return { text: "Liquidated", color: "text-red-500" };
@@ -88,7 +80,6 @@ export default function BorrowModal({
 
   const riskStatus = getRiskStatus();
 
-  // Get health bar color based on percentage
   const getHealthBarColor = () => {
     if (healthPercentage >= 80)
       return "bg-gradient-to-r from-red-600 to-red-500";
@@ -101,7 +92,6 @@ export default function BorrowModal({
     return "bg-gradient-to-r from-emerald-500 to-green-500";
   };
 
-  // Get slider thumb color
   const getSliderThumbColor = () => {
     if (healthPercentage >= 80) return "bg-red-500";
     if (healthPercentage >= 75) return "bg-orange-500";
