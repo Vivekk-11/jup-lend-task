@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 import { CiWallet } from "react-icons/ci";
 
 interface BorrowModalProps {
@@ -36,11 +38,80 @@ export default function BorrowModal({
   borrowTokenName,
 }: BorrowModalProps) {
   const [amount, setAmount] = useState("");
-  const [healthPercentage, setHealthPercentage] = useState(69.91);
+
+  const LIQUIDATION_THRESHOLD = 0.8;
+  const SOL_PRICE = 132;
+
+  // Calculate new borrowed amount
+  const additionalBorrow = parseFloat(amount) || 0;
+  const newBorrowedAmount = borrowedAmount + additionalBorrow;
+
+  // Calculate collateral value
+  const collateralValue = suppliedAmount * SOL_PRICE;
+
+  // Calculate health percentage (LTV utilization)
+  // Cap at 100%
+  const healthPercentage =
+    collateralValue > 0
+      ? Math.min((newBorrowedAmount / collateralValue) * 100, 100)
+      : 0;
+
+  // Handle slider change
+  const handleSliderChange = (value: number[]) => {
+    const percentage = value[0];
+    // Calculate how much to borrow at this percentage
+    const targetBorrowed = (collateralValue * percentage) / 100;
+    const newBorrowAmount = Math.max(targetBorrowed - borrowedAmount, 0);
+    setAmount(newBorrowAmount.toFixed(2));
+  };
+
+  // Calculate liquidation price
+  const liquidationPrice =
+    suppliedAmount > 0
+      ? newBorrowedAmount / (suppliedAmount * LIQUIDATION_THRESHOLD)
+      : 0;
+
+  const currentPrice = SOL_PRICE;
+
+  // Determine risk status
+  const getRiskStatus = () => {
+    if (healthPercentage >= 80)
+      return { text: "Liquidated", color: "text-red-500" };
+    if (healthPercentage >= 75)
+      return { text: "Very Risky", color: "text-orange-500" };
+    if (healthPercentage >= 60)
+      return { text: "Risky", color: "text-orange-400" };
+    if (healthPercentage >= 30)
+      return { text: "Moderate", color: "text-yellow-400" };
+    return { text: "Safe", color: "text-emerald-400" };
+  };
+
+  const riskStatus = getRiskStatus();
+
+  // Get health bar color based on percentage
+  const getHealthBarColor = () => {
+    if (healthPercentage >= 80)
+      return "bg-gradient-to-r from-red-600 to-red-500";
+    if (healthPercentage >= 75)
+      return "bg-gradient-to-r from-orange-500 to-red-500";
+    if (healthPercentage >= 60)
+      return "bg-gradient-to-r from-orange-500 to-orange-400";
+    if (healthPercentage >= 30)
+      return "bg-gradient-to-r from-yellow-500 to-orange-500";
+    return "bg-gradient-to-r from-emerald-500 to-green-500";
+  };
+
+  // Get slider thumb color
+  const getSliderThumbColor = () => {
+    if (healthPercentage >= 80) return "bg-red-500";
+    if (healthPercentage >= 75) return "bg-orange-500";
+    if (healthPercentage >= 60) return "bg-orange-400";
+    if (healthPercentage >= 30) return "bg-yellow-500";
+    return "bg-emerald-500";
+  };
 
   const handleBorrow = () => {
     console.log("Borrowing:", amount);
-    // Add borrow logic here
   };
 
   return (
@@ -77,9 +148,8 @@ export default function BorrowModal({
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-neutral-400">Borrow</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-400 flex items-center gap-x-1">
-                  <CiWallet />
-                  <span>0.00 {borrowedToken}</span>
+                <span className="text-xs text-neutral-400 flex items-center gap-x-1.5">
+                  <CiWallet /> <span>0.00 {borrowedToken}</span>
                 </span>
               </div>
             </div>
@@ -105,52 +175,72 @@ export default function BorrowModal({
             </div>
           </div>
 
-          {/* Health Bar with Status */}
+          {/* Health Bar with Status and Slider */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Status</span>
-                <span className="text-sm font-medium text-orange-400">
-                  Risky
+                <span className={`text-sm font-medium ${riskStatus.color}`}>
+                  {riskStatus.text}
                 </span>
               </div>
-              <span className="text-sm font-medium">{healthPercentage}%</span>
+              <span className="text-sm font-medium">
+                {healthPercentage.toFixed(2)}%
+              </span>
             </div>
 
-            {/* Custom slider with markers */}
-            <div className="relative">
-              <div className="relative h-2 bg-[#1a2332] rounded-full overflow-hidden">
-                <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-orange-500 rounded-full"
-                  style={{ width: `${healthPercentage}%` }}
-                />
-              </div>
+            {/* Custom Slider */}
+            <div className="relative h-2">
+              {/* Background track */}
+              <div className="absolute inset-0 bg-[#1a2632] rounded-full" />
 
-              {/* Slider handle */}
+              {/* Filled track with gradient */}
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-yellow-500 rounded-full border-2 border-[#0B121A] cursor-pointer"
-                style={{
-                  left: `${healthPercentage}%`,
-                  transform: "translate(-50%, -50%)",
-                }}
+                className={cn(
+                  "absolute left-0 top-0 h-full rounded-full transition-all",
+                  getHealthBarColor()
+                )}
+                style={{ width: `${healthPercentage}%` }}
               />
 
               {/* Markers */}
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-neutral-600"
+                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-[#0B121A] pointer-events-none z-10"
                 style={{ left: "25%" }}
               />
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-neutral-600"
+                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-[#0B121A] pointer-events-none z-10"
                 style={{ left: "50%" }}
               />
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-neutral-600"
+                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-[#0B121A] pointer-events-none z-10"
                 style={{ left: "75%" }}
               />
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-6 bg-neutral-500"
-                style={{ left: "100%" }}
+                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#0B121A] pointer-events-none z-10"
+                style={{ left: "80%" }}
+              />
+
+              {/* Slider thumb */}
+              <div
+                className={cn(
+                  "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white cursor-pointer transition-all z-20",
+                  getSliderThumbColor()
+                )}
+                style={{ left: `${healthPercentage}%` }}
+              />
+
+              {/* Invisible input for interaction */}
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="0.1"
+                value={healthPercentage}
+                onChange={(e) =>
+                  handleSliderChange([parseFloat(e.target.value)])
+                }
+                className="absolute inset-0 w-full opacity-0 cursor-pointer z-30"
               />
             </div>
 
@@ -169,16 +259,34 @@ export default function BorrowModal({
             <div className="w-4 h-4 rounded-full border border-neutral-500 flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-xs">i</span>
             </div>
-            <p>
-              If SOL reaches 116.48 USDC (drops by 12.98%), your position may be
-              partially liquidated
-            </p>
+            {liquidationPrice > 0 && liquidationPrice < currentPrice ? (
+              <p>
+                If {suppliedToken} drops to {liquidationPrice.toFixed(2)} USDC
+                (drops by{" "}
+                {(
+                  ((currentPrice - liquidationPrice) / currentPrice) *
+                  100
+                ).toFixed(2)}
+                %), your position may be partially liquidated
+              </p>
+            ) : liquidationPrice >= currentPrice ? (
+              <p>
+                Your position is at high risk of liquidation. The liquidation
+                threshold has been reached or exceeded.
+              </p>
+            ) : (
+              <p>
+                Your position is safe from liquidation at current collateral
+                levels.
+              </p>
+            )}
           </div>
 
           {/* Borrow Button */}
           <button
             onClick={handleBorrow}
-            className="cursor-pointer w-full bg-[#c7f284] text-black font-semibold py-3.5 rounded-lg hover:bg-[#91B163] transition-colors"
+            disabled={healthPercentage >= 80}
+            className="w-full bg-[#c7f284] text-black font-semibold py-3.5 rounded-lg hover:bg-[#91B163] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Borrow
           </button>
