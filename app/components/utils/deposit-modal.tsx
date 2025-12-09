@@ -9,6 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CiWallet } from "react-icons/ci";
+import BN from "bn.js";
+import {
+  ComputeBudgetProgram,
+  Connection,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import { getOperateIx } from "@jup-ag/lend/borrow";
+import { toast } from "sonner";
+import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
 
 interface DepositModalProps {
   open: boolean;
@@ -36,6 +46,7 @@ export default function DepositModal({
   tokenName,
 }: DepositModalProps) {
   const [amount, setAmount] = useState("");
+  const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
   const SOL_PRICE = 132;
@@ -79,9 +90,94 @@ export default function DepositModal({
     return "from-emerald-500 to-green-500";
   };
 
-  const handleDeposit = () => {
-    console.log("Depositing:", amount);
-    // Add deposit logic here
+  const handleDeposit = async () => {
+    try {
+      const depositAmount = parseFloat(amount);
+
+      if (isNaN(depositAmount)) {
+        console.error("Invalid amount");
+        return;
+      }
+
+      if (depositAmount <= 0) {
+        console.error("Amount must be greater than 0");
+        return;
+      }
+
+      // TODO: check real balance of user's wallet!
+      // if (depositAmount > walletBalance) {
+      //   toast.error("Amount is greater than wallet balance");
+      //   return;
+      // }
+
+      const DECIMALS = 9;
+      const colAmount = new BN(depositAmount * 10 ** DECIMALS);
+      const debtAmount = new BN(0);
+
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL!;
+
+      const connection = new Connection(rpcUrl);
+
+      if (!connected || !publicKey || !signTransaction) {
+        toast.error("Please connect your wallet first!");
+        return;
+      }
+
+      const walletBalance = await connection.getBalance(publicKey);
+      const walletBalanceSOL = walletBalance / 1e9;
+
+      const RESERVE_SOL = 0.005;
+      const availableSOL = walletBalanceSOL - RESERVE_SOL;
+
+      console.log("Wallet balance:", walletBalanceSOL);
+      console.log("Available to deposit:", availableSOL);
+      console.log("deposit:", colAmount, amount);
+
+      if (depositAmount > availableSOL) {
+        toast.error(
+          `Insufficient balance. Available: ${availableSOL.toFixed(
+            4
+          )} SOL (${walletBalanceSOL.toFixed(
+            4
+          )} SOL - ${RESERVE_SOL} SOL for fees)`
+        );
+        return;
+      }
+
+      const signer = publicKey;
+
+      const { ixs, addressLookupTableAccounts } = await getOperateIx({
+        vaultId: 1,
+        positionId: 5762,
+        colAmount,
+        debtAmount,
+        signer,
+        connection,
+      });
+
+      const { blockhash } = await connection.getLatestBlockhash();
+
+      const messageV0 = new TransactionMessage({
+        payerKey: signer,
+        recentBlockhash: blockhash,
+        instructions: [
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 1_000_000,
+          }),
+          ...ixs,
+        ],
+      }).compileToV0Message(addressLookupTableAccounts);
+
+      const transaction = new VersionedTransaction(messageV0);
+
+      const signedTx = await signTransaction(transaction);
+      const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+      console.log("Deposited: ", txid);
+    } catch (error) {
+      toast.error("Something went wrong while depositing!");
+      console.error("Error during deposit getOperateIx:", error);
+    }
   };
 
   const handleHalf = () => {

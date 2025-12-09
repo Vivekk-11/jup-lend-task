@@ -9,6 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CiWallet } from "react-icons/ci";
+import { toast } from "sonner";
+import { BN } from "bn.js";
+import {
+  ComputeBudgetProgram,
+  Connection,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
+import { getOperateIx } from "@jup-ag/lend/borrow";
 
 interface WithdrawModalProps {
   open: boolean;
@@ -36,6 +46,7 @@ export default function WithdrawModal({
   tokenName,
 }: WithdrawModalProps) {
   const [amount, setAmount] = useState("");
+  const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
   const SOL_PRICE = 132;
@@ -85,8 +96,77 @@ export default function WithdrawModal({
     return "from-emerald-500 to-green-500";
   };
 
-  const handleWithdraw = () => {
-    console.log("Withdrawing:", amount);
+  const handleWithdraw = async () => {
+    try {
+      const withdrawAmount = parseFloat(amount);
+
+      if (isNaN(withdrawAmount)) {
+        toast.error("Invalid withdrawal amount!");
+        return;
+      }
+
+      if (withdrawAmount <= 0) {
+        toast.error("Withdrawal amount should be greater than 0");
+        return;
+      }
+
+      if (withdrawAmount > suppliedAmount) {
+        toast.error("You cannot withdraw more than supplied collateral");
+        return;
+      }
+
+      const DECIMALS = 9;
+      const colAmount = new BN(-(withdrawAmount * 10 ** DECIMALS));
+      const debtAmount = new BN(0);
+
+      const rpcUrl =
+        process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+        "https://api.mainnet-beta.solana.com";
+
+      const connection = new Connection(rpcUrl);
+
+      if (!connected || !publicKey || !signTransaction) {
+        toast.error("Please connect your wallet first!");
+        return;
+      }
+
+      const signer = publicKey;
+
+      const { ixs, addressLookupTableAccounts } = await getOperateIx({
+        vaultId: 1,
+        positionId: 5762,
+        colAmount,
+        debtAmount,
+        connection,
+        signer,
+      });
+
+      const { blockhash } = await connection.getLatestBlockhash();
+
+      const messageV0 = new TransactionMessage({
+        payerKey: signer,
+        recentBlockhash: blockhash,
+        instructions: [
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 1_000_000,
+          }),
+          ...ixs,
+        ],
+      }).compileToV0Message(addressLookupTableAccounts);
+
+      const transaction = new VersionedTransaction(messageV0);
+
+      const signedTx = await signTransaction(
+        transaction
+      );
+
+      const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+      console.log("Withdrew: ", txid)
+    } catch (error) {
+      toast.error("Something went wrong while withdrawing!");
+      console.error("Something went wrong while withdrawing!", error);
+    }
   };
 
   const handleHalf = () => {
