@@ -26,7 +26,7 @@ interface BorrowModalProps {
   onOpenChange: (open: boolean) => void;
   suppliedAmount: number;
   suppliedToken: string;
-  suppliedUSD: string;
+  suppliedUSD: number;
   borrowedAmount: number;
   borrowedToken: string;
   borrowedUSD: string;
@@ -124,7 +124,7 @@ export default function BorrowModal({
         return;
       }
 
-      if (borrowAmount > suppliedAmount) {
+      if (borrowAmount > suppliedUSD) {
         toast.error("Borrow amount is more than the collateral");
         return;
       }
@@ -194,9 +194,9 @@ export default function BorrowModal({
             <div>
               <div className="text-xs text-neutral-400 mb-1">Supplied</div>
               <div className="text-lg font-semibold">
-                {suppliedAmount} {suppliedToken}
+                {suppliedAmount.toFixed(9)} {suppliedToken}
               </div>
-              <div className="text-xs text-neutral-400">{suppliedUSD}</div>
+              <div className="text-xs text-neutral-400">${suppliedUSD.toFixed(6)}</div>
             </div>
             <div>
               <div className="text-xs text-neutral-400 mb-1">Borrowed</div>

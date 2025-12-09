@@ -19,6 +19,9 @@ interface Props {
   tokenName: string;
   apyFormatted: string;
   type: "collateral" | "debt";
+  borrowed: number;
+  supplied: number;
+  suppliedUsd: number;
 }
 
 const Card = ({
@@ -32,6 +35,9 @@ const Card = ({
   tokenName,
   apyFormatted,
   type,
+  borrowed,
+  supplied,
+  suppliedUsd,
 }: Props) => {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
@@ -156,11 +162,11 @@ const Card = ({
           <DepositModal
             open={depositModalOpen}
             onOpenChange={setDepositModalOpen}
-            suppliedCollateral={0.094123}
+            suppliedCollateral={supplied}
             walletBalance={0.0}
-            borrowedAmount={8.7709}
+            borrowedAmount={borrowed}
             borrowedToken="USDC"
-            borrowedUSD="$8.7699"
+            borrowedUSD={`$${borrowed}`}
             tokenSymbol={tokenSymbol}
             tokenIcon={tokenIcon}
             tokenName={tokenName}
@@ -170,9 +176,9 @@ const Card = ({
             onOpenChange={setWithdrawModalOpen}
             suppliedAmount={tokenAmount}
             suppliedUSD={usdValueFormatted}
-            borrowedAmount={8.7708}
+            borrowedAmount={borrowed}
             borrowedToken="USDC"
-            borrowedUSD="$8.7699"
+            borrowedUSD={`$${borrowed}`}
             tokenSymbol={tokenSymbol}
             tokenIcon={tokenIcon}
             tokenName={tokenName}
@@ -185,9 +191,9 @@ const Card = ({
           <BorrowModal
             open={borrowModalOpen}
             onOpenChange={setBorrowModalOpen}
-            suppliedAmount={0.094123}
+            suppliedAmount={supplied}
             suppliedToken="SOL"
-            suppliedUSD="$12.53"
+            suppliedUSD={suppliedUsd}
             borrowedAmount={tokenAmount}
             borrowedToken={tokenSymbol}
             borrowedUSD={usdValueFormatted}
