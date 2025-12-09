@@ -36,11 +36,65 @@ export default function WithdrawModal({
   tokenName,
 }: WithdrawModalProps) {
   const [amount, setAmount] = useState("");
-  const [healthPercentage, setHealthPercentage] = useState(69.91);
+
+  const LIQUIDATION_THRESHOLD = 0.8;
+  const SOL_PRICE = 132;
+
+  const withdrawAmount = parseFloat(amount) || 0;
+  const newCollateral = Math.max(suppliedAmount - withdrawAmount, 0);
+
+  const newCollateralValue = newCollateral * SOL_PRICE;
+  const borrowedValue = borrowedAmount;
+
+  const healthPercentage =
+    newCollateralValue > 0
+      ? Math.min((borrowedValue / newCollateralValue) * 100, 100)
+      : borrowedValue > 0
+      ? 100
+      : 0;
+
+  const liquidationPrice =
+    newCollateral > 0
+      ? borrowedValue / (newCollateral * LIQUIDATION_THRESHOLD)
+      : 0;
+
+  const currentPrice = SOL_PRICE;
+  const priceDropPercentage =
+    liquidationPrice > 0 && liquidationPrice < currentPrice
+      ? ((currentPrice - liquidationPrice) / currentPrice) * 100
+      : liquidationPrice === 0
+      ? 100
+      : 0;
+
+  const getRiskStatus = () => {
+    if (healthPercentage >= 80)
+      return { text: "Liquidated", color: "text-red-500" };
+    if (healthPercentage >= 60)
+      return { text: "Risky", color: "text-orange-400" };
+    if (healthPercentage >= 30)
+      return { text: "Moderate", color: "text-yellow-400" };
+    return { text: "Safe", color: "text-emerald-400" };
+  };
+
+  const riskStatus = getRiskStatus();
+
+  const getHealthBarColor = () => {
+    if (healthPercentage >= 80) return "from-red-600 to-red-500";
+    if (healthPercentage >= 60) return "from-orange-500 to-red-500";
+    if (healthPercentage >= 30) return "from-yellow-500 to-orange-500";
+    return "from-emerald-500 to-green-500";
+  };
 
   const handleWithdraw = () => {
     console.log("Withdrawing:", amount);
-    // Add withdraw logic here
+  };
+
+  const handleHalf = () => {
+    setAmount((suppliedAmount / 2).toFixed(6));
+  };
+
+  const handleMax = () => {
+    setAmount(suppliedAmount.toFixed(6));
   };
 
   return (
@@ -81,12 +135,20 @@ export default function WithdrawModal({
               <div className="flex items-center gap-2">
                 <span className="text-xs text-neutral-400 flex items-center gap-x-1">
                   <CiWallet />
-                  <span>0.00 {borrowedToken}</span>
+                  <span>
+                    {suppliedAmount.toFixed(6)} {tokenSymbol}
+                  </span>
                 </span>
-                <button className="text-xs px-2 py-0.5 bg-[#19242e] rounded text-neutral-300 hover:bg-[#1f2937]">
+                <button
+                  onClick={handleHalf}
+                  className="text-xs px-2 py-0.5 bg-[#19242e] rounded text-neutral-300 hover:bg-[#1f2937]"
+                >
                   HALF
                 </button>
-                <button className="text-xs px-2 py-0.5 bg-[#19242e] rounded text-neutral-300 hover:bg-[#1f2937]">
+                <button
+                  onClick={handleMax}
+                  className="text-xs px-2 py-0.5 bg-[#19242e] rounded text-neutral-300 hover:bg-[#1f2937]"
+                >
                   MAX
                 </button>
               </div>
@@ -116,13 +178,17 @@ export default function WithdrawModal({
           {/* Health Bar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">{healthPercentage}%</span>
-              <span className="text-sm font-medium text-orange-400">Risky</span>
+              <span className="text-sm font-medium">
+                {healthPercentage.toFixed(2)}%
+              </span>
+              <span className={`text-sm font-medium ${riskStatus.color}`}>
+                {riskStatus.text}
+              </span>
             </div>
             <div className="relative h-2 bg-[#1a2332] rounded-full overflow-hidden">
               <div
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#ffa500] to-[#ff6b6b] rounded-full"
-                style={{ width: `${healthPercentage}%` }}
+                className={`absolute left-0 top-0 h-full bg-gradient-to-r ${getHealthBarColor()} rounded-full transition-all duration-300`}
+                style={{ width: `${Math.min(healthPercentage, 100)}%` }}
               />
             </div>
             <div className="flex justify-end mt-1">
@@ -136,7 +202,8 @@ export default function WithdrawModal({
               <span className="text-xs">i</span>
             </div>
             <p>
-              If SOL reaches 116.48 USDC (drops by 12.98%), your position may be
+              If {tokenSymbol} reaches {liquidationPrice.toFixed(2)} USDC (drops
+              by {priceDropPercentage.toFixed(2)}%), your position may be
               partially liquidated
             </p>
           </div>
