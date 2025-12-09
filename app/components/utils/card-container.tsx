@@ -30,7 +30,15 @@ const CardContainer = () => {
         type="debt"
       />
 
-      <LastCard />
+      <LastCard
+        suppliedAmount={0.094125}
+        suppliedToken="SOL"
+        suppliedAPY={12.5}
+        borrowedAmount={8.771}
+        borrowedToken="USDC"
+        borrowedAPY={5.2}
+        solPrice={132}
+      />
     </div>
   );
 };
