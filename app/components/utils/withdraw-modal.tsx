@@ -156,13 +156,12 @@ export default function WithdrawModal({
 
       const transaction = new VersionedTransaction(messageV0);
 
-      const signedTx = await signTransaction(
-        transaction
-      );
+      const signedTx = await signTransaction(transaction);
 
       const txid = await connection.sendRawTransaction(signedTx.serialize());
 
-      console.log("Withdrew: ", txid)
+      toast.success("Withdrawal successful!");
+      console.log("Withdrew: ", txid);
     } catch (error) {
       toast.error("Something went wrong while withdrawing!");
       console.error("Something went wrong while withdrawing!", error);

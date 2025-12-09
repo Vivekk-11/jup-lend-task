@@ -8,9 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { CiWallet } from "react-icons/ci";
+import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
+import { toast } from "sonner";
+import { BN } from "bn.js";
+import {
+  ComputeBudgetProgram,
+  Connection,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import { getOperateIx } from "@jup-ag/lend/borrow";
 
 interface BorrowModalProps {
   open: boolean;
@@ -38,6 +47,7 @@ export default function BorrowModal({
   borrowTokenName,
 }: BorrowModalProps) {
   const [amount, setAmount] = useState("");
+  const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
   const SOL_PRICE = 132;
@@ -100,8 +110,72 @@ export default function BorrowModal({
     return "bg-emerald-500";
   };
 
-  const handleBorrow = () => {
-    console.log("Borrowing:", amount);
+  const handleBorrow = async () => {
+    try {
+      const borrowAmount = parseFloat(amount);
+
+      if (isNaN(borrowAmount)) {
+        toast.error("Invalid amount");
+        return;
+      }
+
+      if (borrowAmount <= 0) {
+        toast.error("Amount must be greater than 0");
+        return;
+      }
+
+      if (borrowAmount > suppliedAmount) {
+        toast.error("Borrow amount is more than the collateral");
+        return;
+      }
+
+      if (!connected || !publicKey || !signTransaction) {
+        toast.error("Please connect your wallet first!");
+        return;
+      }
+
+      const DECIMALS = 6;
+      const colAmount = new BN(0);
+      const debtAmount = new BN(borrowAmount * 10 ** DECIMALS);
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL!;
+
+      const connection = new Connection(rpcUrl);
+
+      const signer = publicKey;
+
+      const { ixs, addressLookupTableAccounts } = await getOperateIx({
+        vaultId: 1,
+        positionId: 5762,
+        colAmount,
+        debtAmount,
+        signer,
+        connection,
+      });
+
+      const { blockhash } = await connection.getLatestBlockhash();
+
+      const messageV0 = new TransactionMessage({
+        payerKey: signer,
+        recentBlockhash: blockhash,
+        instructions: [
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 1_000_000,
+          }),
+          ...ixs,
+        ],
+      }).compileToV0Message(addressLookupTableAccounts);
+
+      const transaction = new VersionedTransaction(messageV0);
+
+      const signedTx = await signTransaction(transaction);
+      const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+      toast.success(`Successfully borrowed ${amount}`);
+      console.log("Borrowed: ", txid);
+    } catch (error) {
+      toast.error("Something went wrong while borrowing!");
+      console.error("Something went wrong while borrowing: ", error);
+    }
   };
 
   return (
@@ -165,7 +239,6 @@ export default function BorrowModal({
             </div>
           </div>
 
-          {/* Health Bar with Status and Slider */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -179,12 +252,9 @@ export default function BorrowModal({
               </span>
             </div>
 
-            {/* Custom Slider */}
             <div className="relative h-2">
-              {/* Background track */}
               <div className="absolute inset-0 bg-[#1a2632] rounded-full" />
 
-              {/* Filled track with gradient */}
               <div
                 className={cn(
                   "absolute left-0 top-0 h-full rounded-full transition-all",
@@ -193,7 +263,6 @@ export default function BorrowModal({
                 style={{ width: `${healthPercentage}%` }}
               />
 
-              {/* Markers */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-[#0B121A] pointer-events-none z-10"
                 style={{ left: "25%" }}
@@ -211,7 +280,6 @@ export default function BorrowModal({
                 style={{ left: "80%" }}
               />
 
-              {/* Slider thumb */}
               <div
                 className={cn(
                   "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white cursor-pointer transition-all z-20",
@@ -220,7 +288,6 @@ export default function BorrowModal({
                 style={{ left: `${healthPercentage}%` }}
               />
 
-              {/* Invisible input for interaction */}
               <input
                 type="range"
                 min="0"
@@ -234,7 +301,6 @@ export default function BorrowModal({
               />
             </div>
 
-            {/* Labels */}
             <div className="flex justify-between text-xs text-neutral-500 mt-2">
               <span>0%</span>
               <span>25%</span>
@@ -244,7 +310,6 @@ export default function BorrowModal({
             </div>
           </div>
 
-          {/* Warning */}
           <div className="flex items-start gap-2 text-sm text-neutral-400">
             <div className="w-4 h-4 rounded-full border border-neutral-500 flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-xs">i</span>
@@ -272,7 +337,6 @@ export default function BorrowModal({
             )}
           </div>
 
-          {/* Borrow Button */}
           <button
             onClick={handleBorrow}
             disabled={healthPercentage >= 80}

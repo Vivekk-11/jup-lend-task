@@ -9,6 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CiWallet } from "react-icons/ci";
+import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
+import { toast } from "sonner";
+import {
+  ComputeBudgetProgram,
+  Connection,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import { BN } from "bn.js";
+import { getOperateIx } from "@jup-ag/lend/borrow";
 
 interface RepayModalProps {
   open: boolean;
@@ -34,6 +44,7 @@ export default function RepayModal({
   suppliedToken = "SOL",
 }: RepayModalProps) {
   const [amount, setAmount] = useState("");
+  const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
   const SOL_PRICE = 132;
@@ -80,8 +91,64 @@ export default function RepayModal({
     return "from-emerald-500 to-green-500";
   };
 
-  const handleRepay = () => {
-    console.log("Repaying:", amount);
+  const handleRepay = async () => {
+    try {
+      const repayAmount = parseFloat(amount);
+
+      if (isNaN(repayAmount)) {
+        toast.error("Invalid amount");
+        return;
+      }
+
+      if (repayAmount <= 0) {
+        toast.error("Amount must be greater than 0");
+        return;
+      }
+
+      if (!connected || !publicKey || !signTransaction) {
+        toast.error("Please connect your wallet first!");
+        return;
+      }
+
+      const DECIMALS = 6;
+      const colAmount = new BN(0);
+      const debtAmount = new BN(-(repayAmount * 10 ** DECIMALS));
+
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL!;
+      const connection = new Connection(rpcUrl);
+
+      const { ixs, addressLookupTableAccounts } = await getOperateIx({
+        vaultId: 1,
+        positionId: 5762,
+        colAmount,
+        debtAmount,
+        signer: publicKey,
+        connection,
+      });
+
+      const { blockhash } = await connection.getLatestBlockhash();
+
+      const messageV0 = new TransactionMessage({
+        payerKey: publicKey,
+        recentBlockhash: blockhash,
+        instructions: [
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 1_000_000,
+          }),
+          ...ixs,
+        ],
+      }).compileToV0Message(addressLookupTableAccounts);
+
+      const transaction = new VersionedTransaction(messageV0);
+      const signedTx = await signTransaction(transaction);
+      const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+      toast.success("Repayment successful!");
+      console.log("Repaid: ", txid);
+    } catch (error) {
+      toast.error("Something went wrong while repaying!");
+      console.error("Something went wrong while repaying: ", error);
+    }
   };
 
   const handleHalf = () => {

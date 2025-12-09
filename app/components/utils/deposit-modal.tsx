@@ -104,12 +104,6 @@ export default function DepositModal({
         return;
       }
 
-      // TODO: check real balance of user's wallet!
-      // if (depositAmount > walletBalance) {
-      //   toast.error("Amount is greater than wallet balance");
-      //   return;
-      // }
-
       const DECIMALS = 9;
       const colAmount = new BN(depositAmount * 10 ** DECIMALS);
       const debtAmount = new BN(0);
@@ -128,10 +122,6 @@ export default function DepositModal({
 
       const RESERVE_SOL = 0.005;
       const availableSOL = walletBalanceSOL - RESERVE_SOL;
-
-      console.log("Wallet balance:", walletBalanceSOL);
-      console.log("Available to deposit:", availableSOL);
-      console.log("deposit:", colAmount, amount);
 
       if (depositAmount > availableSOL) {
         toast.error(
@@ -172,6 +162,8 @@ export default function DepositModal({
 
       const signedTx = await signTransaction(transaction);
       const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+      toast.success(`Successfully deposited ${amount}`)
 
       console.log("Deposited: ", txid);
     } catch (error) {
