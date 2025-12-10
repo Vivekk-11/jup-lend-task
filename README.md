@@ -8,7 +8,7 @@ A Next.js application replicating the Jupiter Lend borrowing interface with full
 
 ## 🚀 Live Demo
 
-[\[Your Deployment URL\]](https://jup-lend-task.vercel.app/)
+[\[Deployment URL\]](https://jup-lend-task.vercel.app/)
 
 ## 📋 Overview
 
