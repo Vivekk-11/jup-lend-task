@@ -71,7 +71,7 @@ const LastCard = ({
     <div className="relative flex flex-col justify-between gap-2 overflow-hidden rounded-xl border border-[#19242e] p-4">
       {/* Net APY */}
       <div className="flex w-full items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm text-neutral-400">
+        <span className="flex items-center gap-1.5 text-sm text-neutral-400 sm:text-[10px]">
           <span className="text-neutral-400 underline decoration-neutral-600 decoration-dashed decoration-from-font underline-offset-4">
             Net APY
           </span>
@@ -89,12 +89,12 @@ const LastCard = ({
 
       {/* Liq. Price/Offset */}
       <div className="flex w-full items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm text-neutral-400">
+        <span className="flex items-center gap-1.5 text-sm text-neutral-400 sm:text-[10px]">
           <span className="text-neutral-400 underline decoration-neutral-600 decoration-dashed decoration-from-font underline-offset-4">
             Liq. Price/Offset
           </span>
         </span>
-        <span className="text-sm text-neutral-200">
+        <span className="text-sm text-neutral-200 sm:text-[10px]">
           <span className="relative inline-flex items-center rounded-sm">
             <span translate="no">
               {liquidationPrice.toFixed(2)} {borrowedToken}
@@ -107,12 +107,12 @@ const LastCard = ({
       {/* Position Health */}
       <div className="flex flex-col gap-3">
         <div className="flex w-full items-center justify-between">
-          <span className="flex items-center gap-1.5 text-sm text-neutral-400">
+          <span className="flex items-center gap-1.5 text-sm text-neutral-400 sm:text-[10px]">
             <span className="text-neutral-400 underline decoration-neutral-600 decoration-dashed decoration-from-font underline-offset-4">
               Position Health
             </span>
           </span>
-          <span className="flex items-center gap-2 text-neutral-200">
+          <span className="flex items-center gap-2 text-neutral-200 sm:text-[10px]">
             <div className="flex items-center gap-2">
               <span className={riskStatus.color}>{riskStatus.text}</span>
               <span>{healthPercentage.toFixed(2)}%</span>
