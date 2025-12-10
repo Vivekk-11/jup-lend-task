@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -13,31 +13,37 @@ import BN from "bn.js";
 import {
   ComputeBudgetProgram,
   Connection,
+  SystemProgram,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
 import { getOperateIx } from "@jup-ag/lend/borrow";
 import { toast } from "sonner";
 import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
+import {
+  NATIVE_MINT,
+  createSyncNativeInstruction,
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccount,
+} from "@solana/spl-token";
 
 interface DepositModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   suppliedCollateral: number;
-  walletBalance: number;
   borrowedAmount: number;
   borrowedToken: string;
   borrowedUSD: string;
   tokenSymbol: string;
   tokenIcon: string;
   tokenName: string;
-  solPrice: number
+  solPrice: number;
 }
 
 export default function DepositModal({
   open,
   onOpenChange,
-  walletBalance,
   suppliedCollateral,
   borrowedAmount,
   borrowedToken,
@@ -45,9 +51,10 @@ export default function DepositModal({
   tokenSymbol,
   tokenIcon,
   tokenName,
-  solPrice
+  solPrice,
 }: DepositModalProps) {
   const [amount, setAmount] = useState("");
+  const [walletBalance, setWalletBalance] = useState(0);
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
@@ -59,7 +66,7 @@ export default function DepositModal({
   const newCollateralValue = newCollateral * solPrice;
   const borrowedValue = borrowedAmount;
 
-  const healthPercentage = (borrowedValue / newCollateralValue) * 100; //how much of your collateral value you've borrowed
+  const healthPercentage = (borrowedValue / newCollateralValue) * 100 || 0; //how much of your collateral value you've borrowed
 
   const liquidationPrice =
     newCollateral > 0
@@ -118,17 +125,14 @@ export default function DepositModal({
         return;
       }
 
-      const walletBalance = await connection.getBalance(publicKey);
-      const walletBalanceSOL = walletBalance / 1e9;
-
       const RESERVE_SOL = 0.005;
-      const availableSOL = walletBalanceSOL - RESERVE_SOL;
+      const availableSOL = walletBalance - RESERVE_SOL;
 
       if (depositAmount > availableSOL) {
         toast.error(
           `Insufficient balance. Available: ${availableSOL.toFixed(
             4
-          )} SOL (${walletBalanceSOL.toFixed(
+          )} SOL (${walletBalance.toFixed(
             4
           )} SOL - ${RESERVE_SOL} SOL for fees)`
         );
@@ -136,6 +140,33 @@ export default function DepositModal({
       }
 
       const signer = publicKey;
+
+      const wsolAccount = getAssociatedTokenAddressSync(NATIVE_MINT, signer);
+
+      const preInstructions = [];
+
+      const accountInfo = await connection.getAccountInfo(wsolAccount);
+
+      if (!accountInfo) {
+        preInstructions.push(
+          createAssociatedTokenAccountInstruction(
+            signer,
+            wsolAccount,
+            signer,
+            NATIVE_MINT
+          )
+        );
+      }
+
+      preInstructions.push(
+        SystemProgram.transfer({
+          fromPubkey: signer,
+          toPubkey: wsolAccount,
+          lamports: colAmount.toNumber(),
+        })
+      );
+
+      preInstructions.push(createSyncNativeInstruction(wsolAccount));
 
       const { ixs, addressLookupTableAccounts } = await getOperateIx({
         vaultId: 1,
@@ -155,6 +186,7 @@ export default function DepositModal({
           ComputeBudgetProgram.setComputeUnitLimit({
             units: 1_000_000,
           }),
+          ...preInstructions,
           ...ixs,
         ],
       }).compileToV0Message(addressLookupTableAccounts);
@@ -164,21 +196,40 @@ export default function DepositModal({
       const signedTx = await signTransaction(transaction);
       const txid = await connection.sendRawTransaction(signedTx.serialize());
 
-      toast.success(`Successfully deposited ${amount}`)
+      toast.success(`Successfully deposited ${amount}`);
 
       console.log("Deposited: ", txid);
+      onOpenChange(false);
     } catch (error) {
       toast.error("Something went wrong while depositing!");
       console.error("Error during deposit getOperateIx:", error);
     }
   };
 
+  useEffect(() => {
+    (async () => {
+      if (!publicKey) {
+        setWalletBalance(0);
+        return;
+      }
+
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL!;
+
+      const connection = new Connection(rpcUrl);
+
+      const walletBalance = await connection.getBalance(publicKey);
+      const walletBalanceSOL = walletBalance / 1e9;
+
+      setWalletBalance(walletBalanceSOL);
+    })();
+  }, [publicKey]);
+
   const handleHalf = () => {
     setAmount((walletBalance / 2).toFixed(6));
   };
 
   const handleMax = () => {
-    setAmount(walletBalance.toFixed(6));
+    setAmount(`${walletBalance}`);
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,9 +247,11 @@ export default function DepositModal({
             <div>
               <div className="text-xs text-neutral-400 mb-1">Token Balance</div>
               <div className="text-lg font-semibold">
-                {walletBalance.toFixed(2)} {tokenSymbol}
+                {walletBalance.toFixed(6)} {tokenSymbol}
               </div>
-              <div className="text-xs text-neutral-400">$0.00</div>
+              <div className="text-xs text-neutral-400">
+                ${(walletBalance * solPrice).toFixed(4)}
+              </div>
             </div>
             <div>
               <div className="text-xs text-neutral-400 mb-1">Borrowed</div>
@@ -298,7 +351,7 @@ export default function DepositModal({
           {/* Deposit Button */}
           <button
             onClick={handleDeposit}
-            className="w-full bg-[#c7f284] text-black font-semibold py-3.5 rounded-lg hover:bg-[#91B163] transition-colors"
+            className="cursor-pointer w-full bg-[#c7f284] text-black font-semibold py-3.5 rounded-lg hover:bg-[#91B163] transition-colors"
           >
             Deposit
           </button>

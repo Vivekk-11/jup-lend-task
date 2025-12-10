@@ -165,7 +165,6 @@ const Card = ({
             open={depositModalOpen}
             onOpenChange={setDepositModalOpen}
             suppliedCollateral={supplied}
-            walletBalance={0.0}
             borrowedAmount={borrowed}
             borrowedToken="USDC"
             borrowedUSD={`$${borrowed}`}

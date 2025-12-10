@@ -45,7 +45,7 @@ export default function WithdrawModal({
   tokenSymbol,
   tokenIcon,
   tokenName,
-  solPrice
+  solPrice,
 }: WithdrawModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
@@ -163,6 +163,7 @@ export default function WithdrawModal({
 
       toast.success("Withdrawal successful!");
       console.log("Withdrew: ", txid);
+      onOpenChange(false);
     } catch (error) {
       toast.error("Something went wrong while withdrawing!");
       console.error("Something went wrong while withdrawing!", error);
@@ -174,7 +175,7 @@ export default function WithdrawModal({
   };
 
   const handleMax = () => {
-    setAmount(suppliedAmount.toFixed(6));
+    setAmount(`${suppliedAmount}`);
   };
 
   return (

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Connection } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 import { fetchPositionData, PositionAccount } from "@/lib/fetch-position";
 import { fetchSolPrice } from "@/lib/fetch-oracle-price";
+import * as JupLend from "@jup-ag/lend/borrow";
+import { useUnifiedWallet } from "@jup-ag/wallet-adapter";
 
 interface PositionData {
   collateralAmount: number;
@@ -27,14 +29,27 @@ export const usePositionData = (vaultId: number, positionId: number) => {
           "confirmed"
         );
 
+        const dummyKeypair = Keypair.generate();
+
+        const program = JupLend.getVaultsProgram({
+          connection,
+          signer: dummyKeypair.publicKey,
+        });
+
         const rawPosition = await fetchPositionData(
           connection,
           vaultId,
           positionId
         );
 
-        const collateralAmount = rawPosition.supplyAmount.toNumber() / 10 ** 9;
-        const debtAmount = rawPosition.dustDebtAmount.toNumber() / 10 ** 6;
+        const positionState = await JupLend.getCurrentPositionState({
+          vaultId: 1,
+          position: rawPosition,
+          program,
+        });
+
+        const collateralAmount = positionState.colRaw.toNumber() / 10 ** 9;
+        const debtAmount = positionState.debtRaw.toNumber() / 10 ** 9;
 
         const solPrice = await fetchSolPrice();
         const usdcPrice = 1;

@@ -43,7 +43,7 @@ export default function RepayModal({
   borrowTokenName,
   suppliedAmount = 0.094125,
   suppliedToken = "SOL",
-  solPrice
+  solPrice,
 }: RepayModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
@@ -146,6 +146,7 @@ export default function RepayModal({
 
       toast.success("Repayment successful!");
       console.log("Repaid: ", txid);
+      onOpenChange(false);
     } catch (error) {
       toast.error("Something went wrong while repaying!");
       console.error("Something went wrong while repaying: ", error);
@@ -157,7 +158,7 @@ export default function RepayModal({
   };
 
   const handleMax = () => {
-    setAmount(borrowedAmount.toFixed(6));
+    setAmount(`${borrowedAmount}`);
   };
 
   return (
@@ -187,7 +188,7 @@ export default function RepayModal({
               <div className="flex items-center gap-2">
                 <span className="text-xs text-neutral-400 flex items-center gap-x-1">
                   <CiWallet />
-                  <span> 0.00 {borrowedToken}</span>
+                  <span> {borrowedUSD} {borrowedToken}</span>
                 </span>
                 <button
                   onClick={handleHalf}

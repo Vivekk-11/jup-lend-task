@@ -8,7 +8,10 @@ const CardContainer = () => {
   const vaultId = 1;
   const positionId = 5762;
 
-  const { positionData, loading, error } = usePositionData(vaultId, positionId);
+  const { positionData, loading, error } = usePositionData(
+    vaultId,
+    positionId,
+  );
 
   if (loading) {
     return (
@@ -28,13 +31,19 @@ const CardContainer = () => {
     );
   }
 
+  console.log("POSITION DATA:", positionData);
+
   return (
     <div className="grid gap-5 lg:grid-cols-3 sm:grid-cols-2">
       <Card
         title="Supplied Collateral"
         tokenSymbol="SOL"
         tokenAmount={positionData.collateralAmount}
-        tokenAmountFormatted={positionData.collateralAmount.toFixed(2)}
+        tokenAmountFormatted={
+          !positionData.collateralAmount
+            ? positionData.collateralAmount.toFixed(2)
+            : positionData.collateralAmount.toFixed(6)
+        }
         usdValue={positionData.collateralUSD}
         usdValueFormatted={`$${positionData.collateralUSD.toFixed(2)}`}
         tokenIcon="https://cdn.instadapp.io/icons/jupiter/tokens/sol.png"
@@ -50,15 +59,15 @@ const CardContainer = () => {
       <Card
         title="Borrowed Debt"
         tokenSymbol="USDC"
-        tokenAmount={positionData.debtAmount}
-        tokenAmountFormatted={positionData.debtAmount.toFixed(2)}
+        tokenAmount={positionData.debtUSD}
+        tokenAmountFormatted={positionData.debtUSD.toFixed(2)}
         usdValue={positionData.debtUSD}
         usdValueFormatted={`$${positionData.debtUSD.toFixed(2)}`}
         tokenIcon="https://cdn.instadapp.io/icons/jupiter/tokens/usdc.png"
         tokenName="USD Coin"
         apyFormatted="4.6%" //hardcoded
         type="debt"
-        borrowed={positionData.debtAmount}
+        borrowed={positionData.debtUSD}
         supplied={positionData.collateralAmount}
         suppliedUsd={positionData.collateralUSD}
         solPrice={positionData.solPrice}
