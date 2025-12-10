@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jupiter Lend Position Manager
 
-## Getting Started
+A Next.js application replicating the Jupiter Lend borrowing interface with full transaction capabilities for managing collateralized debt positions.
 
-First, run the development server:
+## 📹 Demo Video
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+[screencast-from-2025-12-10-13-20-04_iOklIHzK.webm](https://github.com/user-attachments/assets/bbdd7d32-ea3b-44a9-935f-0a30102856d9)
+
+## 🚀 Live Demo
+
+[\[Your Deployment URL\]](https://jup-lend-task.vercel.app/)
+
+## 📋 Overview
+
+This project is a fully functional replica of Jupiter Lend's position management interface, allowing users to interact with their leveraged positions on Solana. All operations execute real on-chain transactions with actual token transfers.
+
+**Important Note**: This application is connected to a specific pre-existing position (Position ID: 5762) that was manually created for demonstration purposes. Users cannot create new positions through this interface - it is designed solely for managing the existing position.
+
+## ✨ Features
+
+### Core Functionality
+
+- **Deposit Collateral**: Add SOL as collateral to your position (automatically wraps SOL to wSOL before deposit)
+- **Withdraw Collateral**: Remove SOL from your position (respecting LTV limits)
+- **Borrow**: Take out USDC loans against your collateral
+- **Repay**: Pay back borrowed USDC to reduce debt
+
+All four operations use Jupiter Lend's `getOperateIx` function with proper instruction handling:
+
+- Deposit: `col_amount > 0` (with SOL → wSOL syncing)
+- Withdraw: `col_amount < 0`
+- Borrow: `debt_amount > 0`
+- Repay: `debt_amount < 0`
+
+### Real-Time Data Integration
+
+- **Live Position Data**: Fetches actual position state using `getCurrentPositionState` from `@jup-ag/lend/borrow`
+- **Oracle Price Feeds**: Real-time SOL/USDC price from Switchboard Oracle
+- **Vault State**: Directly queries Jupiter Lend's vault IDL for accurate debt calculations
+- **Dynamic LTV Calculation**: Real-time health factor and liquidation risk assessment
+
+### What's Real vs Mocked
+
+✅ **Real (Fully Integrated)**:
+
+- All position data (collateral, debt, LTV)
+- SOL/USDC price from Oracle
+- Transaction execution with actual transfers
+- Wallet balance fetching
+- Health factor and liquidation calculations
+- All modals and position state updates
+- wSOL wrapping for deposits
+
+❌ **Mocked**:
+
+- Supply APY
+- Debt APY
+
+_(Note: APY values are hardcoded as they require historical rate calculations not exposed in the SDK)_
+
+## 🛠️ Technical Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Blockchain**: Solana Web3.js
+- **Wallet**: Jupiter Wallet Adapter (Unified Wallet)
+- **UI Components**: shadcn/ui
+- **Icons**: react-icons
+- **Typography**: Inter font (matching Jupiter Lend's design)
+- **State Management**: React Hooks
+
+## 🎨 Design
+
+- **Visual Accuracy**: ~80-90% match with Jupiter Lend's interface
+- **Color Scheme**: Near-exact color matching with original
+- **Responsive Design**: Fully responsive across desktop, tablet, and mobile
+- **Animations**: Smooth transitions and loading states
+
+## 🔑 Position Configuration
+```typescript
+// Hardcoded position ID (manually created for this demo)
+const VAULT_ID = 1;
+const POSITION_ID = 5762;
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
