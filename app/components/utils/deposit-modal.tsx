@@ -125,17 +125,8 @@ export default function DepositModal({
         return;
       }
 
-      const RESERVE_SOL = 0.005;
-      const availableSOL = walletBalance - RESERVE_SOL;
-
-      if (depositAmount > availableSOL) {
-        toast.error(
-          `Insufficient balance. Available: ${availableSOL.toFixed(
-            4
-          )} SOL (${walletBalance.toFixed(
-            4
-          )} SOL - ${RESERVE_SOL} SOL for fees)`
-        );
+      if (depositAmount > walletBalance) {
+        toast.error("Insufficient Balance!");
         return;
       }
 
