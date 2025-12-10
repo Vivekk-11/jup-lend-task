@@ -31,6 +31,7 @@ interface WithdrawModalProps {
   tokenSymbol: string;
   tokenIcon: string;
   tokenName: string;
+  solPrice: number;
 }
 
 export default function WithdrawModal({
@@ -44,17 +45,17 @@ export default function WithdrawModal({
   tokenSymbol,
   tokenIcon,
   tokenName,
+  solPrice
 }: WithdrawModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
-  const SOL_PRICE = 132;
 
   const withdrawAmount = parseFloat(amount) || 0;
   const newCollateral = Math.max(suppliedAmount - withdrawAmount, 0);
 
-  const newCollateralValue = newCollateral * SOL_PRICE;
+  const newCollateralValue = newCollateral * solPrice;
   const borrowedValue = borrowedAmount;
 
   const healthPercentage =
@@ -69,7 +70,7 @@ export default function WithdrawModal({
       ? borrowedValue / (newCollateral * LIQUIDATION_THRESHOLD)
       : 0;
 
-  const currentPrice = SOL_PRICE;
+  const currentPrice = solPrice;
   const priceDropPercentage =
     liquidationPrice > 0 && liquidationPrice < currentPrice
       ? ((currentPrice - liquidationPrice) / currentPrice) * 100

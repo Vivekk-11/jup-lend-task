@@ -1,4 +1,3 @@
-
 interface LastCardProps {
   suppliedAmount: number;
   suppliedToken: string;
@@ -11,7 +10,6 @@ interface LastCardProps {
 
 const LastCard = ({
   suppliedAmount,
-  suppliedToken,
   suppliedAPY,
   borrowedAmount,
   borrowedToken,
@@ -21,7 +19,8 @@ const LastCard = ({
   const LIQUIDATION_THRESHOLD = 0.8;
 
   const collateralValue = suppliedAmount * solPrice;
-  const netAPY = suppliedAPY - (borrowedAPY * borrowedAmount) / collateralValue;
+  const netAPY =
+    suppliedAPY - (borrowedAPY * borrowedAmount) / collateralValue || 0;
 
   const liquidationPrice =
     suppliedAmount > 0

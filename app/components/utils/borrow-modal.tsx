@@ -32,6 +32,7 @@ interface BorrowModalProps {
   borrowedUSD: string;
   borrowTokenIcon: string;
   borrowTokenName: string;
+  solPrice: number;
 }
 
 export default function BorrowModal({
@@ -45,17 +46,17 @@ export default function BorrowModal({
   borrowedUSD,
   borrowTokenIcon,
   borrowTokenName,
+  solPrice
 }: BorrowModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
-  const SOL_PRICE = 132;
 
   const additionalBorrow = parseFloat(amount) || 0;
   const newBorrowedAmount = borrowedAmount + additionalBorrow;
 
-  const collateralValue = suppliedAmount * SOL_PRICE;
+  const collateralValue = suppliedAmount * solPrice;
 
   const healthPercentage =
     collateralValue > 0
@@ -74,7 +75,7 @@ export default function BorrowModal({
       ? newBorrowedAmount / (suppliedAmount * LIQUIDATION_THRESHOLD)
       : 0;
 
-  const currentPrice = SOL_PRICE;
+  const currentPrice = solPrice;
 
   const getRiskStatus = () => {
     if (healthPercentage >= 80)

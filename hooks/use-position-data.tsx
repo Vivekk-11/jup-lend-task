@@ -1,7 +1,7 @@
-// hooks/usePositionData.ts
 import { useEffect, useState } from "react";
 import { Connection } from "@solana/web3.js";
 import { fetchPositionData, PositionAccount } from "@/lib/fetch-position";
+import { fetchSolPrice } from "@/lib/fetch-oracle-price";
 
 interface PositionData {
   collateralAmount: number;
@@ -10,6 +10,7 @@ interface PositionData {
   debtUSD: number;
   ltv: number;
   rawPosition: PositionAccount;
+  solPrice: number;
 }
 
 export const usePositionData = (vaultId: number, positionId: number) => {
@@ -35,7 +36,7 @@ export const usePositionData = (vaultId: number, positionId: number) => {
         const collateralAmount = rawPosition.supplyAmount.toNumber() / 10 ** 9;
         const debtAmount = rawPosition.dustDebtAmount.toNumber() / 10 ** 6;
 
-        const solPrice = 132; // TODO: Fetch from oracle
+        const solPrice = await fetchSolPrice();
         const usdcPrice = 1;
 
         const collateralUSD = collateralAmount * solPrice;
@@ -50,6 +51,7 @@ export const usePositionData = (vaultId: number, positionId: number) => {
           debtUSD,
           ltv,
           rawPosition,
+          solPrice,
         });
       } catch (err) {
         console.error("Error fetching position data:", err);

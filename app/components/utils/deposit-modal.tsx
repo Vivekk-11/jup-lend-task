@@ -31,6 +31,7 @@ interface DepositModalProps {
   tokenSymbol: string;
   tokenIcon: string;
   tokenName: string;
+  solPrice: number
 }
 
 export default function DepositModal({
@@ -44,18 +45,18 @@ export default function DepositModal({
   tokenSymbol,
   tokenIcon,
   tokenName,
+  solPrice
 }: DepositModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
-  const SOL_PRICE = 132;
 
   const currentCollateral = suppliedCollateral; // Current SOL balance
   const depositAmount = parseFloat(amount) || 0;
   const newCollateral = currentCollateral + depositAmount;
 
-  const newCollateralValue = newCollateral * SOL_PRICE;
+  const newCollateralValue = newCollateral * solPrice;
   const borrowedValue = borrowedAmount;
 
   const healthPercentage = (borrowedValue / newCollateralValue) * 100; //how much of your collateral value you've borrowed
@@ -65,7 +66,7 @@ export default function DepositModal({
       ? borrowedValue / (newCollateral * LIQUIDATION_THRESHOLD)
       : 0;
 
-  const currentPrice = SOL_PRICE;
+  const currentPrice = solPrice;
   const priceDropPercentage =
     newCollateral > 0
       ? ((currentPrice - liquidationPrice) / currentPrice) * 100

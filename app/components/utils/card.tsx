@@ -22,6 +22,7 @@ interface Props {
   borrowed: number;
   supplied: number;
   suppliedUsd: number;
+  solPrice: number;
 }
 
 const Card = ({
@@ -38,6 +39,7 @@ const Card = ({
   borrowed,
   supplied,
   suppliedUsd,
+  solPrice,
 }: Props) => {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
@@ -170,6 +172,7 @@ const Card = ({
             tokenSymbol={tokenSymbol}
             tokenIcon={tokenIcon}
             tokenName={tokenName}
+            solPrice={solPrice}
           />
           <WithdrawModal
             open={withdrawModalOpen}
@@ -182,6 +185,7 @@ const Card = ({
             tokenSymbol={tokenSymbol}
             tokenIcon={tokenIcon}
             tokenName={tokenName}
+            solPrice={solPrice}
           />
         </>
       )}
@@ -199,6 +203,7 @@ const Card = ({
             borrowedUSD={usdValueFormatted}
             borrowTokenIcon={tokenIcon}
             borrowTokenName={tokenName}
+            solPrice={solPrice}
           />
           <RepayModal
             open={repayModalOpen}
@@ -208,6 +213,7 @@ const Card = ({
             borrowedUSD={usdValueFormatted}
             borrowTokenIcon={tokenIcon}
             borrowTokenName={tokenName}
+            solPrice={solPrice}
           />
         </>
       )}

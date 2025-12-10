@@ -34,42 +34,44 @@ const CardContainer = () => {
         title="Supplied Collateral"
         tokenSymbol="SOL"
         tokenAmount={positionData.collateralAmount}
-        tokenAmountFormatted={positionData.collateralAmount.toFixed(6)}
+        tokenAmountFormatted={positionData.collateralAmount.toFixed(2)}
         usdValue={positionData.collateralUSD}
         usdValueFormatted={`$${positionData.collateralUSD.toFixed(2)}`}
         tokenIcon="https://cdn.instadapp.io/icons/jupiter/tokens/sol.png"
         tokenName="Wrapped SOL"
-        apyFormatted="6.3%"
+        apyFormatted="6.3%" //hardcoded
         type="collateral"
-        borrowed={positionData.debtAmount} // ✅ Debt in USDC tokens
-        supplied={positionData.collateralAmount} // ✅ Collateral in SOL
-        suppliedUsd={positionData.collateralUSD} // ✅ Collateral USD value
+        borrowed={positionData.debtAmount}
+        supplied={positionData.collateralAmount}
+        suppliedUsd={positionData.collateralUSD}
+        solPrice={positionData.solPrice}
       />
 
       <Card
         title="Borrowed Debt"
         tokenSymbol="USDC"
         tokenAmount={positionData.debtAmount}
-        tokenAmountFormatted={positionData.debtAmount.toFixed(4)}
+        tokenAmountFormatted={positionData.debtAmount.toFixed(2)}
         usdValue={positionData.debtUSD}
-        usdValueFormatted={`$${positionData.debtUSD.toFixed(4)}`}
+        usdValueFormatted={`$${positionData.debtUSD.toFixed(2)}`}
         tokenIcon="https://cdn.instadapp.io/icons/jupiter/tokens/usdc.png"
         tokenName="USD Coin"
-        apyFormatted="4.6%"
+        apyFormatted="4.6%" //hardcoded
         type="debt"
-        borrowed={positionData.debtAmount} // ✅ Debt in USDC tokens
-        supplied={positionData.collateralAmount} // ✅ Collateral in SOL
-        suppliedUsd={positionData.collateralUSD} // ✅ Collateral USD value
+        borrowed={positionData.debtAmount}
+        supplied={positionData.collateralAmount}
+        suppliedUsd={positionData.collateralUSD}
+        solPrice={positionData.solPrice}
       />
 
       <LastCard
-        suppliedAmount={positionData.collateralAmount}
+        suppliedAmount={positionData.collateralAmount || 0}
         suppliedToken="SOL"
         suppliedAPY={6.3}
-        borrowedAmount={positionData.debtAmount}
+        borrowedAmount={positionData.debtAmount || 0}
         borrowedToken="USDC"
         borrowedAPY={4.6}
-        solPrice={132}
+        solPrice={positionData.solPrice}
       />
     </div>
   );

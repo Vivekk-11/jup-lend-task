@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { FaAngleLeft } from "react-icons/fa6";
-import { CiGlobe } from "react-icons/ci";
+import { SolPrice } from "./sol-price";
 
 const MainTop = () => {
   return (
@@ -29,7 +29,7 @@ const MainTop = () => {
               <h2 className="text-xl font-semibold text-neutral-200 sm:text-2xl">
                 SOL/USDC
               </h2>
-              <span className="text-sm text-neutral-500 sm:text-base">#1</span>
+              <span className="text-sm text-neutral-500 sm:text-base">#5762</span>
             </div>
             <span className="text-xs text-neutral-500">
               Supply SOL to Borrow USDC
@@ -37,10 +37,7 @@ const MainTop = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="outline-none flex size-7 items-center justify-center rounded-full border border-neutral-800 text-neutral-400">
-            <CiGlobe />
-          </span>
-
+          <SolPrice />
           <svg
             xmlns="www.w3.org/2000/svg"
             width="35"

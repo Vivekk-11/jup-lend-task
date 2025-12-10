@@ -30,6 +30,7 @@ interface RepayModalProps {
   borrowTokenName: string;
   suppliedAmount?: number;
   suppliedToken?: string;
+  solPrice: number;
 }
 
 export default function RepayModal({
@@ -42,17 +43,17 @@ export default function RepayModal({
   borrowTokenName,
   suppliedAmount = 0.094125,
   suppliedToken = "SOL",
+  solPrice
 }: RepayModalProps) {
   const [amount, setAmount] = useState("");
   const { connected, publicKey, signTransaction } = useUnifiedWallet();
 
   const LIQUIDATION_THRESHOLD = 0.8;
-  const SOL_PRICE = 132;
 
   const repayAmount = parseFloat(amount) || 0;
   const newBorrowedAmount = Math.max(borrowedAmount - repayAmount, 0);
 
-  const collateralValue = suppliedAmount * SOL_PRICE;
+  const collateralValue = suppliedAmount * solPrice;
 
   const healthPercentage =
     collateralValue > 0 && newBorrowedAmount > 0
@@ -64,7 +65,7 @@ export default function RepayModal({
       ? newBorrowedAmount / (suppliedAmount * LIQUIDATION_THRESHOLD)
       : 0;
 
-  const currentPrice = SOL_PRICE;
+  const currentPrice = solPrice;
   const priceDropPercentage =
     liquidationPrice > 0 && liquidationPrice < currentPrice
       ? ((currentPrice - liquidationPrice) / currentPrice) * 100
